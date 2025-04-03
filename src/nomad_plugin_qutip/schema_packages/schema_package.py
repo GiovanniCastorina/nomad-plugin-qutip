@@ -177,37 +177,6 @@ class QuantumCircuit(ArchiveSection):
         type=str, description='Circuit definition (OpenQASM, Cirq JSON, etc.).'
     )
 
-class Parameter(ArchiveSection):
-    """
-    Single parameter name-value in Hamiltonian.
-    """
-    m_def = ArchiveSection(label_quantity='name') 
-
-    name = Quantity(
-        type=str,
-        description='Name of the parameter (eg. "a", "coupling_strength").'
-    )
-    value = Quantity(
-        type=np.float64, # Usiamo float per i valori numerici
-        description='Numerical value of the parameter.'
-    )
-    unit = Quantity(type=str, description='Unit of the parameter')
-
-
-class HamiltonianModel(ArchiveSection):
-    """
-    Text string for the Hamiltonian.
-    """
-    formula = Quantity(
-        type=str,
-        description='Hamiltonian formula string.'
-    )
-    parameters = SubSection(
-        sub_section=Parameter.m_def,
-        repeats=True, # More than one parameter
-        description='Parameters list for the Hamiltonian.'
-    )
-
 class QuantumSimulation(Simulation):
     """
     A specialized 'Simulation' to represent quantum calculations
@@ -240,12 +209,6 @@ class QuantumSimulation(Simulation):
         sub_section=QuantumCircuit.m_def,
         repeats=False,
         description='Gate-based circuit if relevant to this calculation.',
-    )
-
-    hamiltonian_model = SubSection(
-        sub_section=HamiltonianModel.m_def,
-        repeats=False, # Just One Hamiltonian
-        description='Description of Hamiltonian an ist parameters.'
     )
     #It lacks outputs? 
     #It should have like https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html ?

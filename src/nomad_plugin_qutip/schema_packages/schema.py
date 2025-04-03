@@ -10,8 +10,6 @@ from .schema_package import (
     QuantumSystem,
     QuantumCircuit, #Needed?
     QuantumState, #Needed?
-    Parameter,             # Added
-    HamiltonianModel,       #Added
 )
 
 m_package = SchemaPackage()
@@ -108,47 +106,6 @@ QuantumSimulation.quantum_circuit.m_annotations.setdefault(
     )
 )
 '''
-#START
-# Maps hamiltonian_model in QuantumSimulation
-QuantumSimulation.hamiltonian_model.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update(
-    {
-        ANNOTATION_KEY: Mapper(
-            mapper='.hamiltonian_model',      
-            sub_section=HamiltonianModel.m_def 
-        )
-    }
-)
-
-
-HamiltonianModel.formula.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update({ANNOTATION_KEY: Mapper(mapper='.formula_string')}) 
-
-HamiltonianModel.parameters.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update(
-    {
-        ANNOTATION_KEY: Mapper(
-            mapper=('get_hamiltonian_parameters', ['.parameter_values']), 
-            sub_section=Parameter.m_def,
-            repeats=True
-        )
-    }
-)
-
-
-Parameter.name.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update({ANNOTATION_KEY: Mapper(mapper='.name')})
-
-Parameter.value.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update({ANNOTATION_KEY: Mapper(mapper='.value')})
-#END
-
-
 # --- Mapping for QuantumObject internal fields ---
 QuantumObject.dims.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
     dict(info=Mapper(mapper='.dims'))

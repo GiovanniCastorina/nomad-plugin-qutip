@@ -16,6 +16,7 @@ from nomad.config import config
 from nomad.parsing.file_parser.mapping_parser import MappingParser, MetainfoParser
 from nomad.datamodel.metainfo.workflow import Workflow
 from nomad.parsing.parser import MatchingParser
+from typing import Any
 
 from nomad_plugin_qutip.schema_packages.schema_package import QuantumSimulation
 
@@ -175,51 +176,6 @@ class JSONParser(MappingParser):
                      self.logger.warning("Found 'circuit' section in JSON, but no 'definition' inside.")
         return None # Return None if no circuit data is found'
     '''
-    def get_hamiltonian_parameters(self, source: Optional[Dict[str, Any]], **kwargs) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Converts the parameter dictionary from JSON (from 'parameter_values')
-        into a list of dictionaries suitable for populating the 'Parameter' subsections.
-
-        Args:
-        source: The JSON dictionary from ['hamiltonian_model']['parameter_values'].
-
-        Returns:
-        A dictionary {'parameters': [list_of_parameters]}, where each element
-        in the list is {'name': param_name, 'value': param_value}.
-        """
-        processed_params: List[Dict[str, Any]] = []
-         # Check if the input is a valid dictionary
-        if source is None:
-             if self.logger:
-                  self.logger.info("Source for Hamiltonian parameters is None (key 'parameter_values' likely missing or null). No parameters parsed.")
-             return {'parameters': processed_params} # Returns the expected structure with an empty list
-
-        if not isinstance(source, dict):
-            if self.logger:
-                self.logger.error(f"Expected a dictionary for 'parameter_values', but got {type(source)}. Skipping parameters.")
-            return {'parameters': processed_params}
-
-        # Iterate over the key-value pairs of the parameter dictionary
-        for param_name, param_value in source.items():
-            try:
-                # Attempt to convert the value to a float
-                numeric_value = float(param_value)
-                # Create the dictionary in the format expected by Metainfo (keys 'name', 'value')
-                processed_params.append({
-                    'name': str(param_name), # Name is a string
-                    'value': numeric_value
-                })
-            except (ValueError, TypeError) as e:
-                # Warnings and such
-                if self.logger:
-                    self.logger.warning(
-                        f"Could not convert value for parameter '{param_name}' to float. Value was: '{param_value}'. Skipping parameter."
-                        # exc_info=e 
-                    )
-                continue # Skips this one
-
-        # Return the final dictionary in the required format for the mapper with repeats=True
-        return {'parameters': processed_params}
 
 
 

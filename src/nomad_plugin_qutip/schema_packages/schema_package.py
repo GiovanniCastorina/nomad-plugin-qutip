@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 import numpy as np
 from nomad.config import config
 from nomad.datamodel.data import Schema,ArchiveSection 
-from nomad.datamodel.metainfo.annotations import ELNAnnotation, ELNComponentEnum
-from nomad.metainfo import MEnum, Quantity, SchemaPackage, SubSection
+from nomad.datamodel.metainfo.annotations import ELNAnnotation, ELNComponentEnum, SectionProperties
+from nomad.metainfo import MEnum, Quantity, SchemaPackage, SubSection, Section
 from nomad_simulations.schema_packages.general import Simulation
 from nomad_simulations.schema_packages.model_system import ModelSystem
 
@@ -177,6 +177,56 @@ class QuantumCircuit(ArchiveSection):
         type=str, description='Circuit definition (OpenQASM, Cirq JSON, etc.).'
     )
 
+class HamiltonianParameter(ArchiveSection):
+    """Stores a single named parameter used in the Hamiltonian formula."""
+    m_def = Section(
+        a_eln={'properties': SectionProperties(
+                label='Hamiltonian Parameter',
+                order=['name', 'value', 'unit']
+            )}
+    )
+    name = Quantity(
+        type=str,
+        description="Name of the parameter.",
+        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity, label='Parameter Name')
+    )
+    value = Quantity(
+        type=np.float64,
+        description="Numerical value of the parameter.",
+        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity)
+    )
+    unit = Quantity(
+        type=str,
+        description="Unit of the parameter (e.g.'eV'). Optional.",
+        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity)
+    )
+
+
+class ModelHamiltonian(ArchiveSection): 
+    """
+    Describes the model Hamiltonian using a formula and parameters.
+    """
+    m_def = Section(
+        a_eln={'properties': SectionProperties(
+                label='Model Hamiltonian Description'
+            )}
+    )
+
+    formula = Quantity(
+        type=str,
+        description="""
+        The mathematical formula representing the Hamiltonian, preferably using
+        LaTeX syntax.
+        """,
+        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity, props={'render_value': 'markdown'})
+    )
+
+    parameters = SubSection(
+        section_def=HamiltonianParameter,
+        repeats=True,
+        description="List of parameters used in the Hamiltonian formula with their values.",
+    )
+
 class QuantumSimulation(Simulation):
     """
     A specialized 'Simulation' to represent quantum calculations
@@ -209,6 +259,13 @@ class QuantumSimulation(Simulation):
         sub_section=QuantumCircuit.m_def,
         repeats=False,
         description='Gate-based circuit if relevant to this calculation.',
+    )
+
+    hamiltonian_description = SubSection(
+        section_def=ModelHamiltonian,
+        description="""
+        Describes the model Hamiltonian using a formula and parameters.
+        """
     )
     #It lacks outputs? 
     #It should have like https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html ?

@@ -9,7 +9,9 @@ from .schema_package import (
     QuantumSimulation,
     QuantumSystem,
     QuantumCircuit, #Needed?
-    QuantumState, #Needed?
+    QuantumState,
+    ModelHamiltonian,      
+    HamiltonianParameter
 )
 
 m_package = SchemaPackage()
@@ -47,6 +49,32 @@ QuantumSimulation.quantum_system.m_annotations.setdefault(
 QuantumSystem.name.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
     dict(info=Mapper(mapper='.name'))
 )
+
+QuantumSystem.num_qubits.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.num_qubits')))
+
+QuantumSimulation.hamiltonian_description.m_annotations.setdefault(
+    MAPPING_ANNOTATION_KEY, {}
+).update(   dict(info=Mapper(mapper=('get_hamiltonian', ['.@']), sub_section=ModelHamiltonian.m_def)))
+
+ModelHamiltonian.formula.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
+    dict(info=Mapper(mapper='.formula'))
+)
+ModelHamiltonian.parameters.m_def.m_annotations.setdefault(
+    MAPPING_ANNOTATION_KEY, {}
+).update(
+    dict(
+        info=Mapper(
+            mapper='.parameters',
+            sub_section=HamiltonianParameter.m_def,
+            repeats=True,
+        )
+    )
+)
+
+HamiltonianParameter.name.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.name')))
+HamiltonianParameter.value.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.value')))
+HamiltonianParameter.unit.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.unit')))
+
 
 ######  Quantum operators
 

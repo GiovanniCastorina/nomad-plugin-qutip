@@ -120,7 +120,8 @@ class JSONParser(MappingParser):
         """
         Process state data from the JSON source.
         Looks for a 'states' key containing a dictionary of states.
-        Filters and includes ONLY states explicitly marked with type 'ket' or 'bra'.
+        Filters states explicitly marked with type 'ket' or 'bra'.
+        If they are marked as 'oper' then counts it as a density matrix ('dm').
         Returns a dictionary {'quantum_states': [list of filtered state dicts]}.
         """
         # Get the dictionary of states from JSON
@@ -137,23 +138,71 @@ class JSONParser(MappingParser):
             qobj_target = self._process_quantum_object_data(qobj_source)
 
 
-            # Check the 'type' and go if is ket or bra
+            # Check the 'type' and go if is ket or bra or oper
             state_type = qobj_target.get('type')
-
+            qobj_target = {}
             if state_type == 'ket' or state_type == 'bra':
-
+                if 'dims' in qobj_source:
+                    qobj_target['dims'] = qobj_source['dims']
+                    try:
+                        dim0 = np.prod(qobj_source['dims'][0]) if qobj_source['dims'][0] else 1
+                        dim1 = np.prod(qobj_source['dims'][1]) if qobj_source['dims'][1] else 1
+                        qobj_target['shape'] = [int(dim0), int(dim1)]
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(f"State '{state_label}' (ket/bra): Could not determine shape from dims {qobj_source['dims']}: {e}")
+                        qobj_target['shape'] = []
+                else:
+                    qobj_target['shape'] = qobj_source.get('shape', [])
+                
+                qobj_target['type'] = source_type # Keep original type for ket and bra
+                
+                qobj_target['storage_format'] = qobj_source.get('storage_format', 'Dense')
+                
+                qobj_target['is_hermitian'] = qobj_source.get('is_hermitian', None)
                 processed_states.append({
                     'label': state_label,       
                     'quantum_object': qobj_target 
                 })
+            
+            elif state_type == 'oper':
+                if 'dims' in qobj_source:
+                    qobj_target['dims'] = qobj_source['dims']
+                    try:
+                        dim0 = np.prod(qobj_source['dims'][0]) if qobj_source['dims'][0] else 1
+                        dim1 = np.prod(qobj_source['dims'][1]) if qobj_source['dims'][1] else 1
+                        qobj_target['shape'] = [int(dim0), int(dim1)]
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(f"State '{state_label}' (oper): Could not determine shape from dims {qobj_source['dims']}: {e}")
+                        qobj_target['shape'] = []
+                else:
+                    qobj_target['shape'] = qobj_source.get('shape', [])
+                #Changing to 'dm'
+                qobj_target['type'] = 'dm'
 
+                qobj_target['storage_format'] = qobj_source.get('storage_format', 'Dense')
+                qobj_target['is_hermitian'] = qobj_source.get('is_hermitian', None)
+                if 'matrix' in state_data:
+                    matrix_dict = state_data['matrix']
+                    re = np.array(matrix_dict.get('re', []))
+                    im = np.array(matrix_dict.get('im', []))
+                    qobj_target['data'] = (re + 1j * im).tolist()
+                else:
+                    qobj_target['data'] = state_data.get('data', None)
+                processed_states.append({
+                    'label': state_label,
+                    'quantum_object': qobj_target
+                })
+
+                
             else:
                 # If the type is not 'ket' or 'bra' 
                 # we skip this entry 
                 if self.logger:
                     self.logger.debug(
                         f"Skipping state '{state_label}' during parsing because its type "
-                        f"is '{state_type}' (expected 'ket' or 'bra')."
+                        f"is '{state_type}' (expected 'ket','bra' or 'oper')."
                     )
 
         return {'quantum_states': processed_states}

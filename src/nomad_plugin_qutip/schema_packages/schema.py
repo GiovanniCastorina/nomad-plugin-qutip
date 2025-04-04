@@ -97,7 +97,7 @@ QuantumOperator.quantum_object.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}
 ).update(dict(info=Mapper(mapper='.quantum_object')))
 
-###### Quantum states  (needed?)
+###### Quantum states
 
 QuantumSimulation.quantum_states.m_def.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}
@@ -120,7 +120,7 @@ QuantumState.quantum_object.m_annotations.setdefault(
 ).update(dict(info=Mapper(mapper='.quantum_object', sub_section=QuantumObject.m_def)))
 
 
-###### Quantum circuit (needed?))
+###### Quantum circuit
 '''
 QuantumSimulation.quantum_circuit.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}

@@ -111,7 +111,6 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [project.entry-points.'nomad.plugin']
-parser_entry_point = "nomad_plugin_qutip.parsers:parser_entry_point"
 schema_package_entry_point = "nomad_plugin_qutip.schema_packages:schema_package_entry_point"
 
 app_entry_point = "nomad_plugin_qutip.apps:app_entry_point"

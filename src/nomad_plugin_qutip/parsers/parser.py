@@ -24,19 +24,6 @@ configuration = config.get_plugin_entry_point(
     'nomad_plugin_qutip.parsers:parser_entry_point'
 )
 
-
-class NewParser(MatchingParser):
-    def parse(
-        self,
-        mainfile: str,
-        archive: 'EntryArchive',
-        logger: 'BoundLogger',
-        child_archives: dict[str, 'EntryArchive'] = None,
-    ) -> None:
-        logger.info('NewParser.parse', parameter=configuration.parameter)
-
-        archive.workflow2 = Workflow(name='test')
-
 class JSONParser(MappingParser):
     """
     A minimal JSON-based MappingParser, analogous to XMLParser but for JSON.
@@ -197,8 +184,7 @@ class JSONParser(MappingParser):
 
                 
             else:
-                # If the type is not 'ket' or 'bra' 
-                # we skip this entry 
+                # If the type is not 'ket','bra' or 'oper' we skip this entry 
                 if self.logger:
                     self.logger.debug(
                         f"Skipping state '{state_label}' during parsing because its type "
@@ -225,7 +211,7 @@ class JSONParser(MappingParser):
                      self.logger.warning("Found 'circuit' section in JSON, but no 'definition' inside.")
         return None # Return None if no circuit data is found'
     '''
-
+    #There should be also the EigenvaluesInVariable and TimeEvolution (check schema_package)
 
 
 

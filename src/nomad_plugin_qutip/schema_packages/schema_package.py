@@ -25,20 +25,6 @@ configuration = config.get_plugin_entry_point(
 
 m_package = SchemaPackage()
 
-
-class NewSchemaPackage(Schema):
-    name = Quantity(
-        type=str, a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity)
-    )
-    message = Quantity(type=str)
-
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
-        super().normalize(archive, logger)
-
-        logger.info('NewSchema.normalize', parameter=configuration.parameter)
-        self.message = f'Hello {self.name}!'
-
-
 class QuantumObject(ArchiveSection):
     """
     A framework-agnostic data container for storing states/operators/superoperators.
@@ -267,9 +253,10 @@ class QuantumSimulation(Simulation):
         Describes the model Hamiltonian using a formula and parameters.
         """
     )
-    #It lacks outputs? 
-    #It should have like https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html ?
-    #To understand better
+    #It lacks the possibility of plotting the eigenvalues in function of a variable. So it should plot 
+    #something from a list of lists (as the eigenvalues) on a variable.
+    #It should also have the possibility of plotting time evolutions, more or less
+    # what is seen here https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html , the final state is handled by states
 
 
 m_package.__init_metainfo__()

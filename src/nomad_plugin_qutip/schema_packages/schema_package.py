@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 import numpy as np
 from nomad.config import config
-from nomad.datamodel.data import Schema,ArchiveSection 
+from nomad.datamodel.data import Schema,ArchiveSection
 from nomad.datamodel.metainfo.annotations import ELNAnnotation, ELNComponentEnum, SectionProperties
 from nomad.metainfo import MEnum, Quantity, SchemaPackage, SubSection, Section
 from nomad_simulations.schema_packages.general import Simulation
@@ -154,15 +154,6 @@ class QuantumState(ArchiveSection):
     )
 
 
-class QuantumCircuit(ArchiveSection):
-    """
-    A container for gate-based quantum circuits, e.g., from OpenQASM or Cirq.
-    """
-
-    circuit_representation = Quantity(
-        type=str, description='Circuit definition (OpenQASM, Cirq JSON, etc.).'
-    )
-
 class HamiltonianParameter(ArchiveSection):
     """Stores a single named parameter used in the Hamiltonian formula."""
     m_def = Section(
@@ -188,7 +179,7 @@ class HamiltonianParameter(ArchiveSection):
     )
 
 
-class ModelHamiltonian(ArchiveSection): 
+class ModelHamiltonian(ArchiveSection):
     """
     Describes the model Hamiltonian using a formula and parameters.
     """
@@ -241,19 +232,13 @@ class QuantumSimulation(Simulation):
         description='List of quantum states (initial states, final states, etc.).',
     )
 
-    quantum_circuit = SubSection(
-        sub_section=QuantumCircuit.m_def,
-        repeats=False,
-        description='Gate-based circuit if relevant to this calculation.',
-    )
-
     hamiltonian_description = SubSection(
         section_def=ModelHamiltonian,
         description="""
         Describes the model Hamiltonian using a formula and parameters.
         """
     )
-    #It lacks the possibility of plotting the eigenvalues in function of a variable. So it should plot 
+    #It lacks the possibility of plotting the eigenvalues in function of a variable. So it should plot
     #something from a list of lists (as the eigenvalues) on a variable.
     #It should also have the possibility of plotting time evolutions, more or less
     # what is seen here https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html , the final state is handled by states

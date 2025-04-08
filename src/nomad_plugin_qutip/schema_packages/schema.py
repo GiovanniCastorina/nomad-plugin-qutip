@@ -8,9 +8,8 @@ from .schema_package import (
     QuantumOperator,
     QuantumSimulation,
     QuantumSystem,
-    QuantumCircuit, #Needed?
     QuantumState,
-    ModelHamiltonian,      
+    ModelHamiltonian,
     HamiltonianParameter
 )
 
@@ -104,7 +103,7 @@ QuantumSimulation.quantum_states.m_def.m_annotations.setdefault(
 ).update(
     dict(
         info=Mapper(
-            mapper=('get_states', ['.quantum_states']),  
+            mapper=('get_states', ['.quantum_states']),
             sub_section=QuantumState.m_def,
             repeats=True,
         )
@@ -120,20 +119,6 @@ QuantumState.quantum_object.m_annotations.setdefault(
 ).update(dict(info=Mapper(mapper='.quantum_object', sub_section=QuantumObject.m_def)))
 
 
-###### Quantum circuit
-'''
-QuantumSimulation.quantum_circuit.m_annotations.setdefault(
-    MAPPING_ANNOTATION_KEY, {}
-).update(
-    dict(
-        info=Mapper(
-            mapper=('get_circuit', ['.@']),  
-            sub_section=QuantumCircuit.m_def,
-            repeats=False, 
-        )
-    )
-)
-'''
 # --- Mapping for QuantumObject internal fields ---
 QuantumObject.dims.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
     dict(info=Mapper(mapper='.dims'))

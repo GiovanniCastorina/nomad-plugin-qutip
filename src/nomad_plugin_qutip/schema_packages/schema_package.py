@@ -93,19 +93,60 @@ class QuantumObject(ArchiveSection):
         ),
     )
 
-    # def normalize(self, archive, logger) -> None:
-    #     """
-    #     check consistency between 'shape' and data.shape,
-    #     and optionally perform further consistency checks (Hermiticity, etc.).
-    #     """
-    #     super().normalize(archive, logger)
-    #     if self.data is not None and len(self.shape) == 2:
-    #         actual_data_shape = list(self.data.shape)
-    #         declared_shape = list(self.shape)
-    #         if declared_shape != actual_data_shape:
-    #             logger.warning(
-    #                 'Inconsistent shape!'
-    #             )
+    def normalize(self, archive, logger) -> None:
+        super().normalize(archive, logger)
+
+        # If data is present, do shape checks
+        if self.data is not None:
+            # Convert data.shape to a np.array of type int
+            data_shape = np.array(self.data.shape, dtype=np.int32)  # e.g., [2, 2]
+
+            # If shape is None or has zero elements, fill from data
+            if self.shape is None or self.shape.size == 0:
+                self.shape = data_shape
+                logger.info(f"Filling 'shape' from data: {self.shape}")
+            # Compare with data_shape using np.array_equal
+            elif not np.array_equal(self.shape, data_shape):
+                logger.warning(
+                    f'Inconsistent shape {self.shape.tolist()} \
+                    vs data {data_shape.tolist()}; '
+                    'using data shape.'
+                )
+                self.shape = data_shape
+
+        # If shape is now set but dims is not, try to infer
+        # (Check shape.size and shape[0], shape[1], etc. carefully)
+        EXPECTED_SHAPE_SIZE = 2
+
+        if (
+            self.shape is not None
+            and self.shape.size == EXPECTED_SHAPE_SIZE  # e.g. shape=[m, n]
+            and (self.dims is None or self.dims.size == 0)
+        ):
+            m, n = self.shape
+            if self.type == 'ket':
+                self.dims = np.array([[m], [1]], dtype=np.int32)
+                logger.info(f"Inferred 'dims' for ket: {self.dims}")
+            elif self.type == 'bra':
+                self.dims = np.array([[1], [n]], dtype=np.int32)
+            elif self.type in ('oper', 'dm'):
+                self.dims = np.array([[m], [n]], dtype=np.int32)
+            elif self.type == 'super':
+                # Could guess dims differently, but here's a simple approach
+                self.dims = np.array([[m], [n]], dtype=np.int32)
+
+        # If type is 'oper' or 'dm' and is_hermitian not set, check from data
+        if (
+            self.type in ('oper', 'dm')
+            and self.data is not None
+            and self.is_hermitian is None
+        ):
+            # Compare data and data.conjugate().T
+            if np.allclose(self.data, self.data.conjugate().T):
+                self.is_hermitian = True
+            else:
+                self.is_hermitian = False
+            logger.info(f"Set 'is_hermitian' to {self.is_hermitian} based on data.")
 
 
 class QuantumSystem(ModelSystem):

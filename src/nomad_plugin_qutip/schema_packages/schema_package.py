@@ -18,6 +18,11 @@ from nomad.datamodel.metainfo.annotations import ELNAnnotation, ELNComponentEnum
 from nomad.metainfo import MEnum, Quantity, SchemaPackage, SubSection, Section
 from nomad_simulations.schema_packages.general import Simulation
 from nomad_simulations.schema_packages.model_system import ModelSystem
+from nomad_simulations.schema_packages.model_method import ModelMethod
+from nomad_simulations.schema_packages.physical_property import PhysicalProperty
+
+from nomad.datamodel.metainfo.plot import PlotSection, PlotlyFigure
+import plotly.express as px
 
 configuration = config.get_plugin_entry_point(
     'nomad_plugin_qutip.schema_packages:schema_package_entry_point'
@@ -158,10 +163,6 @@ class QuantumSystem(ModelSystem):
 
     name = Quantity(type=str, description='Optional label for this quantum system.')
 
-    num_qubits = Quantity(
-        type=int, description='Number of qubits/spin-1/2 sites in this quantum system.'
-    )
-
 
 class QuantumOperator(ArchiveSection):
     """
@@ -244,6 +245,68 @@ class ModelHamiltonian(ArchiveSection):
         repeats=True,
         description="List of parameters used in the Hamiltonian formula with their values.",
     )
+
+
+##############################
+# New PhysicalProperty Sections
+##############################
+
+class MyEigenvals(PhysicalProperty, PlotSection):
+    """
+    A physical property representing energy eigenvalues as a function of an external variable.
+    Expected `value` shape: [n_points, n_eigenvalues]
+    """
+    m_def = Section()
+    value = Quantity(
+        type=np.float64,
+        shape=['*', '*'],
+        description="Matrix of eigenvalues. Rows correspond to variable points and columns to eigenvalues."
+    )
+
+    def plot_eigenvalues(self):
+        # Ensure value is 2D
+        if self.value.ndim != 2:
+            raise ValueError("Value must be a 2D array (n_points, n_eigenvalues) for eigenvalue plotting.")
+        # Retrieve the x-axis from the first variable if available
+        if self.variables and hasattr(self.variables[0], "get_values"):
+            x = self.variables[0].get_values()
+        else:
+            x = np.arange(self.value.shape[0])
+        # Generate a line plot where each eigenvalue is a separate curve
+        fig = px.line(x=x, y=self.value, labels={'x': 'Variable', 'y': 'Eigenvalue'},
+                      title=f"{self.name} vs. Variable")
+        # Append the figure to the PlotSection's figures list
+        self.figures.append(PlotlyFigure(label='Eigenvalues Plot', figure=fig.to_plotly_json()))
+        return fig
+
+
+class MyTimeEvolutionProperty(PhysicalProperty, PlotSection):
+    """
+    A physical property representing the time evolution of a quantum state.
+    Expected `value` shape: [n_time_steps, state_dimension]
+    """
+    m_def = Section()
+    value = Quantity(
+        type=np.float64,
+        shape=['*', '*'],
+        description="Time evolution data. Rows correspond to time steps and columns to components of the state."
+    )
+
+    def plot_time_evolution(self):
+        # Ensure value is 2D
+        if self.value.ndim != 2:
+            raise ValueError("Value must be a 2D array (n_time_steps, state_dimension) for time evolution plotting.")
+        # Retrieve the time axis from the first variable if available
+        if self.variables and hasattr(self.variables[0], "get_values"):
+            time = self.variables[0].get_values()
+        else:
+            time = np.arange(self.value.shape[0])
+        # Create a line plot for each state component
+        fig = px.line(x=time, y=self.value, labels={'x': 'Time', 'y': 'State Component'},
+                      title=f"{self.name} Time Evolution")
+        self.figures.append(PlotlyFigure(label='Time Evolution Plot', figure=fig.to_plotly_json()))
+        return fig
+
 
 class QuantumSimulation(Simulation):
     """

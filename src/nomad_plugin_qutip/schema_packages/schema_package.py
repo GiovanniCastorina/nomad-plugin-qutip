@@ -20,6 +20,7 @@ from nomad_simulations.schema_packages.general import Simulation
 from nomad_simulations.schema_packages.model_system import ModelSystem
 from nomad_simulations.schema_packages.model_method import ModelMethod
 from nomad_simulations.schema_packages.physical_property import PhysicalProperty
+from nomad_simulations.schema_packages.variables import Variables
 
 from nomad.datamodel.metainfo.plot import PlotSection, PlotlyFigure
 import plotly.express as px
@@ -221,7 +222,7 @@ class HamiltonianParameter(ArchiveSection):
     )
 
 
-class ModelHamiltonian(ArchiveSection):
+class ModelHamiltonian(ModelMethod):
     """
     Describes the model Hamiltonian using a formula and parameters.
     """
@@ -251,12 +252,67 @@ class ModelHamiltonian(ArchiveSection):
 # New PhysicalProperty Sections
 ##############################
 
-class MyEigenvals(PhysicalProperty, PlotSection):
+
+class SolverStats(ArchiveSection):
+    m_def = Section(
+        a_eln=dict(lane_width='400px'),
+        description="Statistics related to the numerical solver execution."
+    )
+    solver_name = Quantity(
+        type=str,
+        description="Name of the solver used (e.g., 'sesolve', 'mesolve')."
+    )
+    method = Quantity(
+        type=str,
+        description="Specific algorithm or method used by the solver (e.g., 'scipy zvode adams')."
+    )
+    solver_description = Quantity(
+        type=str,
+        description="Additional description provided by the solver (e.g., 'Schrodinger Evolution')."
+    )
+    initialization_time = Quantity(
+        type=np.float64,
+        unit='second',
+        description="Time taken for solver initialization."
+    )
+    preparation_time = Quantity(
+        type=np.float64,
+        unit='second',
+        description="Time taken for solver preparation steps."
+    )
+    run_time = Quantity(
+        type=np.float64,
+        unit='second',
+        description="Time taken for the main solver execution run."
+    )
+    time_interval_start = Quantity(
+        type=np.float64,
+        description="Start of the simulation time interval."
+    )
+    time_interval_end = Quantity(
+        type=np.float64,
+        description="End of the simulation time interval."
+    )
+    n_steps = Quantity(
+        type=np.int32,
+        description="Number of time steps in the simulation interval."
+    )
+    n_expectation_operators = Quantity(
+        type=np.int32,
+        description="Number of expectation value operators (e_ops) tracked."
+    )
+    final_state_saved = Quantity(
+        type=bool,
+        description="Flag indicating if the final state of the evolution was saved in the result object."
+    )
+
+class EigenvaluesInVariable(PhysicalProperty, PlotSection):
     """
     A physical property representing energy eigenvalues as a function of an external variable.
     Expected `value` shape: [n_points, n_eigenvalues]
     """
-    m_def = Section()
+    m_def = Section(
+        a_eln=dict(properties=SectionProperties(label='Eigenvalues vs Variable')),)
     value = Quantity(
         type=np.float64,
         shape=['*', '*'],
@@ -265,47 +321,141 @@ class MyEigenvals(PhysicalProperty, PlotSection):
 
     def plot_eigenvalues(self):
         # Ensure value is 2D
+        if self.value is None or self.value.size == 0:
+             self.logger.warning("No eigenvalue data available to plot.")
+             return None
         if self.value.ndim != 2:
             raise ValueError("Value must be a 2D array (n_points, n_eigenvalues) for eigenvalue plotting.")
         # Retrieve the x-axis from the first variable if available
-        if self.variables and hasattr(self.variables[0], "get_values"):
-            x = self.variables[0].get_values()
-        else:
-            x = np.arange(self.value.shape[0])
+        x = None
+        x_label = 'Index'
+        if self.variables:
+            var1 = self.variables[0]
+            if hasattr(var1, 'get_values') and var1.value is not None:
+                 x = var1.get_values()
+                 x_label = f"{var1.name or 'Variable'}"
+                 if var1.unit:
+                     x_label += f" ({var1.unit})"
+            elif isinstance(var1.value, (np.ndarray, list)) and len(var1.value) == self.value.shape[0]:
+                 x = var1.value # Fallback
+                 x_label = f"{var1.name or 'Variable'}"
+                 if var1.unit:
+                     x_label += f" ({var1.unit})"
+        
         # Generate a line plot where each eigenvalue is a separate curve
-        fig = px.line(x=x, y=self.value, labels={'x': 'Variable', 'y': 'Eigenvalue'},
-                      title=f"{self.name} vs. Variable")
+        plot_title = f"{self.name or 'Eigenvalues'} vs. {x_label.split('(')[0].strip()}" # Titolo più pulito
+        fig = px.line(x=x, y=self.value, labels={'x': x_label, 'y': 'Eigenvalue'},
+                      title=plot_title)
+        # More eigenvalues labels
+        if self.value.shape[1] > 1:
+             fig.update_layout(showlegend=True)
+             for i, trace in enumerate(fig.data):
+                 trace.name = f'E_{i}' 
+
+        
         # Append the figure to the PlotSection's figures list
         self.figures.append(PlotlyFigure(label='Eigenvalues Plot', figure=fig.to_plotly_json()))
         return fig
+    
+    def normalize(self, archive, logger):
+        super().normalize(archive, logger)
+        try:
+            self.plot_eigenvalues() 
+        except Exception as e:
+            logger.error(f"Failed to plot eigenvalues for '{self.name}': {e}")
 
 
-class MyTimeEvolutionProperty(PhysicalProperty, PlotSection):
+
+class TimeEvolutionProperty(PhysicalProperty, PlotSection):
     """
     A physical property representing the time evolution of a quantum state.
     Expected `value` shape: [n_time_steps, state_dimension]
     """
-    m_def = Section()
+    m_def = Section(a_eln=dict(properties=SectionProperties(label='Time Evolution Results')),
+    )
+
     value = Quantity(
         type=np.float64,
         shape=['*', '*'],
-        description="Time evolution data. Rows correspond to time steps and columns to components of the state."
+        description=(
+            "Expectation values vs time. Rows correspond to time steps, "
+            "columns correspond to different expectation operators (e_ops)."
+        )
     )
 
-    def plot_time_evolution(self):
-        # Ensure value is 2D
+    e_ops_names = Quantity(
+        type=str,
+        shape=['*'], # Lista of strings
+        description="Names/labels of the expectation value operators (e_ops)."
+    )
+
+    solver_statistics = SubSection(
+        section_def=SolverStats,
+        description="Statistics related to the solver execution for this time evolution."
+    )
+
+    def plot_expectation_values(self):
+        if self.value is None or self.value.size == 0:
+             self.logger.warning("No expectation value data available to plot.")
+             return None
         if self.value.ndim != 2:
-            raise ValueError("Value must be a 2D array (n_time_steps, state_dimension) for time evolution plotting.")
-        # Retrieve the time axis from the first variable if available
-        if self.variables and hasattr(self.variables[0], "get_values"):
-            time = self.variables[0].get_values()
-        else:
+            #Could be one expectation value
+             if self.value.ndim == 1:
+                 self.value = self.value.reshape(-1, 1)
+             else:
+                 raise ValueError("Value must be a 1D or 2D array (n_time_steps, [n_e_ops]) for plotting.")
+
+        time = None
+        t_label = 'Index'
+        if self.variables:
+            var_time = self.variables[0] # Assume time is first variable
+            if hasattr(var_time, 'get_values') and var_time.value is not None:
+                 time = var_time.get_values()
+                 t_label = f"{var_time.name or 'Time'}"
+                 if var_time.unit:
+                      t_label += f" ({var_time.unit})"
+            elif isinstance(var_time.value, (np.ndarray, list)) and len(var_time.value) == self.value.shape[0]:
+                 time = var_time.value
+                 t_label = f"{var_time.name or 'Time'}"
+                 if var_time.unit:
+                      t_label += f" ({var_time.unit})"
+
+        if time is None:
             time = np.arange(self.value.shape[0])
-        # Create a line plot for each state component
-        fig = px.line(x=time, y=self.value, labels={'x': 'Time', 'y': 'State Component'},
-                      title=f"{self.name} Time Evolution")
-        self.figures.append(PlotlyFigure(label='Time Evolution Plot', figure=fig.to_plotly_json()))
+    
+        y_label = 'Expectation Value'
+        plot_title = f"{self.name or 'Expectation Values'} vs. {t_label.split('(')[0].strip()}"
+
+        fig = px.line(x=time, y=self.value, labels={'x': t_label, 'y': y_label},
+                      title=plot_title)
+
+        num_operators = self.value.shape[1]
+        operator_names_available = (
+            self.e_ops_names is not None and
+            len(self.e_ops_names) == num_operators
+            )
+
+        if num_operators > 1:
+            fig.update_layout(showlegend=True)
+            for i, trace in enumerate(fig.data):
+                if operator_names_available:
+                    # Use name when provided
+                    trace.name = self.e_ops_names[i]
+                else:
+                    # Fallback
+                    trace.name = f'&lt;Op_{i}&gt;'
+        else:
+            fig.update_layout(showlegend=False)
+
+        self.figures.append(PlotlyFigure(label='Expectation Value Plot', figure=fig.to_plotly_json()))
         return fig
+
+    def normalize(self, archive, logger):
+        super().normalize(archive, logger)
+        try:
+            self.plot_expectation_values()
+        except Exception as e:
+            logger.error(f"Failed to plot expectation values for '{self.name}': {e}")
 
 
 class QuantumSimulation(Simulation):
@@ -342,10 +492,12 @@ class QuantumSimulation(Simulation):
         Describes the model Hamiltonian using a formula and parameters.
         """
     )
-    #It lacks the possibility of plotting the eigenvalues in function of a variable. So it should plot
-    #something from a list of lists (as the eigenvalues) on a variable.
-    #It should also have the possibility of plotting time evolutions, more or less
-    # what is seen here https://qutip.org/docs/4.0.2/modules/qutip/mesolve.html , the final state is handled by states
+
+    outputs = SubSection(
+        section_def=PhysicalProperty,
+        repeats=True,
+        description="List of calculated physical properties (results) from the simulation."
+    )
 
 
 m_package.__init_metainfo__()

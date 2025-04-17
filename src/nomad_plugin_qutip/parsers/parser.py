@@ -18,7 +18,7 @@ from nomad.datamodel.metainfo.workflow import Workflow
 from nomad.parsing.parser import MatchingParser
 from typing import Any
 
-from nomad_plugin_qutip.schema_packages.schema_package import QuantumSimulation
+from nomad_plugin_qutip.schema_packages.schema_package import QuantumSimulation,EigenvaluesInVariable,TimeEvolutionProperty
 
 configuration = config.get_plugin_entry_point(
     'nomad_plugin_qutip.parsers:parser_entry_point'
@@ -192,26 +192,37 @@ class JSONParser(MappingParser):
                     )
 
         return {'quantum_states': processed_states}
-    '''
-     def get_circuit(self, source: dict, **kwargs) -> Optional[dict]:
-        """
-        Process circuit data from the JSON source (expected to be root).
-        Looks for a 'circuit' key containing circuit details.
-        Returns a dictionary {'circuit_representation': circuit_string} or None.
-        """
-        circuit_source = source.get('circuit')
-        if circuit_source and isinstance(circuit_source, dict):
-            circuit_def = circuit_source.get('definition')
-            if circuit_def:
-                # Return dict structure expected by the mapper for 'quantum_circuit' subsection
-                # The key 'circuit_representation' matches the quantity name in QuantumCircuit schema
-                return {'circuit_representation': str(circuit_def)}
+    def get_outputs(self, source: dict, **kwargs) -> list[dict]:
+        processed_outputs = []
+        if not isinstance(source, dict):
+            return processed_outputs
+
+        for result_key, result_data in source.items():
+            if not isinstance(result_data, dict):
+                continue
+
+            calc_type = result_data.get('calculation_type')
+
+            # Dict for EigenvaluesInVariable
+            if calc_type == 'eigenvalues':
+                output_dict = {}
+                output_dict['__section_def'] = EigenvaluesInVariable.m_def
+                output_dict.update(result_data)
+                processed_outputs.append(output_dict)
+
+            # Dict for TimeEvolutionProperty
+            elif calc_type == 'time_evolution':
+                output_dict = {}
+                output_dict['__section_def'] = TimeEvolutionProperty.m_def
+                output_dict.update(result_data)
+                processed_outputs.append(output_dict)
+
             else:
-                 if self.logger:
-                     self.logger.warning("Found 'circuit' section in JSON, but no 'definition' inside.")
-        return None # Return None if no circuit data is found'
-    '''
-    #There should be also the EigenvaluesInVariable and TimeEvolution (check schema_package)
+                if self.logger:
+                    self.logger.warning(f"Skipping result '{result_key}' with unknown "
+                                        f"calculation_type: '{calc_type}'")
+
+        return processed_outputs
 
 
 

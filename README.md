@@ -169,3 +169,4 @@ To run the check for updates locally, follow the instructions on [`cruft` websit
 | Name | E-mail     |
 |------|------------|
 | Giovanni Castorina | [gian.lucact96@gmail.com](mailto:gian.lucact96@gmail.com)
+| Esma Boydas | [esma.boydas@physik.hu-berlin.de](mailto:esma.boydas@physik.hu-berlin.de)

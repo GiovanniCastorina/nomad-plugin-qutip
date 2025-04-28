@@ -341,26 +341,32 @@ class EigenvaluesInVariable(PhysicalProperty, PlotSection):
                  x_label = f"{var1.name or 'Variable'}"
                  if var1.unit:
                      x_label += f" ({var1.unit})"
-        
+
         # Generate a line plot where each eigenvalue is a separate curve
         plot_title = f"{self.name or 'Eigenvalues'} vs. {x_label.split('(')[0].strip()}" # Titolo più pulito
-        fig = px.line(x=x, y=self.value, labels={'x': x_label, 'y': 'Eigenvalue'},
-                      title=plot_title)
+        # fig = px.line(x=x, y=self.value, labels={'x': x_label, 'y': 'Eigenvalue'},
+        #               title=plot_title)
+        fig = px.line(
+            x=x,
+            y=self.value.T,  # ← transpose so each column becomes its own trace
+            labels={'x': x_label, 'y': 'Eigenvalue'},
+            title=plot_title
+        )
         # More eigenvalues labels
         if self.value.shape[1] > 1:
              fig.update_layout(showlegend=True)
              for i, trace in enumerate(fig.data):
-                 trace.name = f'E_{i}' 
+                 trace.name = f'E_{i}'
 
-        
+
         # Append the figure to the PlotSection's figures list
         self.figures.append(PlotlyFigure(label='Eigenvalues Plot', figure=fig.to_plotly_json()))
         return fig
-    
+
     def normalize(self, archive, logger):
         super().normalize(archive, logger)
         try:
-            self.plot_eigenvalues() 
+            self.plot_eigenvalues()
         except Exception as e:
             logger.error(f"Failed to plot eigenvalues for '{self.name}': {e}")
 
@@ -422,12 +428,19 @@ class TimeEvolutionProperty(PhysicalProperty, PlotSection):
 
         if time is None:
             time = np.arange(self.value.shape[0])
-    
+
         y_label = 'Expectation Value'
         plot_title = f"{self.name or 'Expectation Values'} vs. {t_label.split('(')[0].strip()}"
 
-        fig = px.line(x=time, y=self.value, labels={'x': t_label, 'y': y_label},
-                      title=plot_title)
+        # fig = px.line(x=time, y=self.value, labels={'x': t_label, 'y': y_label},
+        #               title=plot_title)
+
+        fig = px.line(
+            x=time,
+            y=self.value.T,  # ← transpose so each expectation operator is a separate trace
+            labels={'x': t_label, 'y': y_label},
+            title=plot_title
+        )
 
         num_operators = self.value.shape[1]
         operator_names_available = (

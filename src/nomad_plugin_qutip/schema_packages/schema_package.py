@@ -196,40 +196,56 @@ class QuantumState(ArchiveSection):
         description='The underlying quantum object representing this state.',
     )
 
-
-class HamiltonianParameter(ArchiveSection):
-    """Stores a single named parameter used in the Hamiltonian formula."""
+class SpinOneHamiltonianParameter(ArchiveSection):
+    """Stores a specific parameter for the NV center spin-1 Hamiltonian."""
     m_def = Section(
         a_eln={'properties': SectionProperties(
-                label='Hamiltonian Parameter',
-                order=['name', 'value', 'unit']
+                label='NV Center Parameter',
+                order=['parameter', 'value', 'unit']
             )}
     )
-    name = Quantity(
-        type=str,
-        description="Name of the parameter.",
-        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity, label='Parameter Name')
+    parameter = Quantity(
+        type=MEnum('D', 'E', 'gamma_e', 'gamma_e_MHz', 'gamma_F', 'hbar', 'mu0'),
+        description=(
+            "Which constant this is: zero-field splitting (D), strain splitting (E), "
+            "electron gyromagnetic ratio (gamma_e), etc."
+        ),
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.SelectQuantity,
+            label='Parameter Type'
+        )
     )
     value = Quantity(
         type=np.float64,
         description="Numerical value of the parameter.",
-        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity)
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.NumberEditQuantity,
+            label='Value'
+        )
     )
     unit = Quantity(
         type=str,
-        description="Unit of the parameter (e.g.'eV'). Optional.",
-        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity)
+        description="Unit of the parameter (e.g., 'MHz', 'Hz/T', 'J·s').",
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.StringEditQuantity,
+            label='Unit'
+        )
     )
 
-
-class ModelHamiltonian(ModelMethod):
+class NVCenterHamiltonian(ModelMethod):
     """
-    Describes the model Hamiltonian using a formula and parameters.
+    Spin-1 Hamiltonian for an NV center:
+      H(B) = D Sz^2 + E (Sx^2 - Sy^2) − γₑ B Sz
     """
     m_def = Section(
         a_eln={'properties': SectionProperties(
-                label='Model Hamiltonian Description'
-            )}
+                label='NV Center Spin Hamiltonian'
+                )}
+    )
+    # Human‐readable name for the model
+    name = Quantity(
+        type=str,
+        description="Name of the Hamiltonian model (e.g. 'NV center spin Hamiltonian')."
     )
 
     formula = Quantity(
@@ -242,7 +258,7 @@ class ModelHamiltonian(ModelMethod):
     )
 
     parameters = SubSection(
-        section_def=HamiltonianParameter,
+        section_def=SpinOneHamiltonianParameter,
         repeats=True,
         description="List of parameters used in the Hamiltonian formula with their values.",
     )
@@ -487,22 +503,17 @@ class QuantumSimulation(Simulation):
         E.g. qubits, spins etc.""",
     )
 
-    quantum_operators = SubSection(
-        sub_section=QuantumOperator.m_def,
-        repeats=True,
-        description='List of quantum operators (Hamiltonian, jump ops, etc.).',
-    )
-
     quantum_states = SubSection(
         sub_section=QuantumState.m_def,
         repeats=True,
         description='List of quantum states (initial states, final states, etc.).',
     )
 
-    hamiltonian_description = SubSection(
-        section_def=ModelHamiltonian,
+    nv_center_hamiltonian = SubSection(
+        section_def=NVCenterHamiltonian,
         description="""
-        Describes the model Hamiltonian using a formula and parameters.
+        Spin‐1 NV center Hamiltonian: zero‐field splitting (D, E)
+        and Zeeman term (γₑ B Sz).
         """
     )
 

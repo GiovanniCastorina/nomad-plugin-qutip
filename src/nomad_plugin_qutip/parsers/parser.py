@@ -127,7 +127,9 @@ class JSONParser(MappingParser):
 
             # Check the 'type' and go if is ket or bra or oper
             state_type = qobj_target.get('type')
-            qobj_target = {}
+            # the throws away all data populated by _process_quantum_objec_data method.
+            # hence commented out
+            #qobj_target = {}
             if state_type == 'ket' or state_type == 'bra':
                 if 'dims' in qobj_source:
                     qobj_target['dims'] = qobj_source['dims']
@@ -142,7 +144,8 @@ class JSONParser(MappingParser):
                 else:
                     qobj_target['shape'] = qobj_source.get('shape', [])
 
-                qobj_target['type'] = source_type # Keep original type for ket and bra
+                #qobj_target['type'] = source_type # Keep original type for ket and bra
+                qobj_target['type'] = state_type
 
                 qobj_target['storage_format'] = qobj_source.get('storage_format', 'Dense')
 

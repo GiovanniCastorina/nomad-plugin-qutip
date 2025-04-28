@@ -58,7 +58,7 @@ class JSONParser(MappingParser):
     def get_system(self, source: dict[str, Any], **kwargs) -> dict[str, Any]:
         return {'name': source.get('simulation_name', 'HASSIKTR')}
 
-    def get_operators(source: dict, **kwargs) -> dict:
+    def get_operators(self, source: dict, **kwargs) -> dict:
         """
         Process operator data from the JSON.
 
@@ -101,7 +101,7 @@ class JSONParser(MappingParser):
                 qobj['data'] = op.get('data', None)
             processed.append({'name': op_name, 'quantum_object': qobj})
         return {'quantum_operators': processed}
-    
+
 
     def get_states(self, source: dict, **kwargs) -> dict:
         """
@@ -115,7 +115,7 @@ class JSONParser(MappingParser):
         states_source = source.get('states', {})
         processed_states = []
 
-        # Iterate through each state found JSON 
+        # Iterate through each state found JSON
         for state_label, state_data in states_source.items():
             # Extract the quantum object data
 
@@ -141,17 +141,17 @@ class JSONParser(MappingParser):
                         qobj_target['shape'] = []
                 else:
                     qobj_target['shape'] = qobj_source.get('shape', [])
-                
+
                 qobj_target['type'] = source_type # Keep original type for ket and bra
-                
+
                 qobj_target['storage_format'] = qobj_source.get('storage_format', 'Dense')
-                
+
                 qobj_target['is_hermitian'] = qobj_source.get('is_hermitian', None)
                 processed_states.append({
-                    'label': state_label,       
-                    'quantum_object': qobj_target 
+                    'label': state_label,
+                    'quantum_object': qobj_target
                 })
-            
+
             elif state_type == 'oper':
                 if 'dims' in qobj_source:
                     qobj_target['dims'] = qobj_source['dims']
@@ -182,9 +182,9 @@ class JSONParser(MappingParser):
                     'quantum_object': qobj_target
                 })
 
-                
+
             else:
-                # If the type is not 'ket','bra' or 'oper' we skip this entry 
+                # If the type is not 'ket','bra' or 'oper' we skip this entry
                 if self.logger:
                     self.logger.debug(
                         f"Skipping state '{state_label}' during parsing because its type "

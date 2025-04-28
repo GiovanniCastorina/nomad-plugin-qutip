@@ -56,7 +56,7 @@ class JSONParser(MappingParser):
         return source.get('program', {'name': '', 'version': ''})
 
     def get_system(self, source: dict[str, Any], **kwargs) -> dict[str, Any]:
-        return {'name': source.get('simulation_name', 'HASSIKTR')}
+        return {'name': source.get('simulation_name', 'default')}
 
     def get_operators(self, source: dict, **kwargs) -> dict:
         """

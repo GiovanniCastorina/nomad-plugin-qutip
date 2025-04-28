@@ -349,7 +349,7 @@ class EigenvaluesInVariable(PhysicalProperty, PlotSection):
                      x_label += f" ({var1.unit})"
 
         # Generate a line plot where each eigenvalue is a separate curve
-        plot_title = f"{self.name or 'Eigenvalues'} vs. {x_label.split('(')[0].strip()}" # Titolo più pulito
+        plot_title = f"{self.name or 'Eigenvalues'} vs. {x_label.split('(')[0].strip()}"
         # fig = px.line(x=x, y=self.value, labels={'x': x_label, 'y': 'Eigenvalue'},
         #               title=plot_title)
         fig = px.line(

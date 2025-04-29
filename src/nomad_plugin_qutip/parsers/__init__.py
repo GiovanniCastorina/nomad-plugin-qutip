@@ -13,5 +13,5 @@ parser = NomadParserEntryPoint(
     name='QutipParser',
     description='Parses JSON output files from QuTiP simulations.',
     mainfile_name_re=r'.+\.qutip.json',
-    mainfile_mime_re=r'application/json',
+    #mainfile_mime_re=r'application/json',
 )

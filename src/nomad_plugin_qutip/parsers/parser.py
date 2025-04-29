@@ -21,7 +21,7 @@ from typing import Any
 from nomad_plugin_qutip.schema_packages.schema_package import QuantumSimulation,EigenvaluesInVariable,TimeEvolutionProperty
 
 configuration = config.get_plugin_entry_point(
-    'nomad_plugin_qutip.parsers:parser_entry_point'
+    'nomad_plugin_qutip.parsers:parser'
 )
 
 class JSONParser(MappingParser):

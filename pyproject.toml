@@ -112,8 +112,8 @@ where = ["src"]
 
 [project.entry-points.'nomad.plugin']
 schema_package_entry_point = "nomad_plugin_qutip.schema_packages:schema_package_entry_point"
-
 app_entry_point = "nomad_plugin_qutip.apps:app_entry_point"
+parser = "nomad_plugin_qutip.parsers:parser"
 
 [tool.cruft]
 # Avoid updating workflow files, this leads to permissions issues

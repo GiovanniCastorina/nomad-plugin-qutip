@@ -12,8 +12,8 @@ from .schema_package import (
     QuantumSimulation,
     QuantumSystem,
     QuantumState,
-    ModelHamiltonian,
-    HamiltonianParameter,
+    SpinHamiltonian,
+    SpinHamiltonianParameter,
     EigenvaluesInVariable,
     TimeEvolutionProperty,
     SolverStats,
@@ -57,43 +57,44 @@ QuantumSystem.name.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
 
 QuantumSystem.num_qubits.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.num_qubits')))
 
-QuantumSimulation.hamiltonian_description.m_annotations.setdefault(
+QuantumSimulation.spin_hamiltonian.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}
-).update(   dict(
+).update(
+    dict(
         info=Mapper(
-            # Map keys 'hamiltonian_info' from JSON 
-            mapper='hamiltonian_info',
-            # Populates ModelHamiltonian
-            sub_section=ModelHamiltonian.m_def
+            # This key should match the key used in json_writer.py
+            mapper='spin_hamiltonian',
+            sub_section=SpinHamiltonian.m_def
         )
     )
 )
 
-ModelHamiltonian.formula.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
+
+SpinHamiltonian.name.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
+    dict(info=Mapper(mapper='.name'))
+)
+SpinHamiltonian.formula.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
     dict(info=Mapper(mapper='.formula'))
 )
-ModelHamiltonian.parameters.m_def.m_annotations.setdefault(
+SpinHamiltonian.parameters.m_def.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}
 ).update(
     dict(
         info=Mapper(
             mapper='.parameters',
-            sub_section=HamiltonianParameter.m_def,
+            sub_section=SpinHamiltonianParameter.m_def,
             repeats=True,
         )
     )
 )
 
-ModelHamiltonian.type.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
-    # Map field 'model_type' in 'hamiltonian_info'
-    dict(info=Mapper(mapper='.model_type'))
+# Mappings for SpinHamiltonianParameter fields
+SpinHamiltonianParameter.value.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
+    dict(info=Mapper(mapper='.value'))
 )
-
-
-HamiltonianParameter.name.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.name')))
-HamiltonianParameter.value.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.value')))
-HamiltonianParameter.unit.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(dict(info=Mapper(mapper='.unit')))
-
+SpinHamiltonianParameter.unit.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).update(
+    dict(info=Mapper(mapper='.unit'))
+)
 
 ######  Quantum operators
 
@@ -144,8 +145,10 @@ QuantumSimulation.outputs.m_def.m_annotations.setdefault(
 ).update(
     dict(
         info=Mapper(
-            mapper=('get_outputs', ['.results']),
+            
+            mapper=('get_outputs', ['.results']), 
             repeats=True
+            
         )
     )
 )

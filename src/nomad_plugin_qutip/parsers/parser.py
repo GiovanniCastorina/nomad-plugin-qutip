@@ -56,7 +56,18 @@ class JSONParser(MappingParser):
         return source.get('program', {'name': '', 'version': ''})
 
     def get_system(self, source: dict[str, Any], **kwargs) -> dict[str, Any]:
-        return {'name': source.get('simulation_name', 'default')}
+        """
+        Extracts system information from the nested 'quantum_system' dictionary.
+        """
+        system_source = source.get('quantum_system', {})
+        system_data = {}
+
+        # Extract name from the nested dictionary, fallback to simulation_name if needed
+        system_data['name'] = system_source.get('name', source.get('simulation_name', 'default'))
+        if 'num_qubits' in system_source:
+            system_data['num_qubits'] = system_source['num_qubits']
+
+        return system_data
 
     def get_operators(self, source: dict, **kwargs) -> dict:
         """

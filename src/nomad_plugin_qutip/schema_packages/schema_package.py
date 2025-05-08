@@ -486,7 +486,7 @@ class QuantumSimulation(Simulation):
     """
 
     # Reference a specialized QuantumSystem (instead of the usual ModelSystem)
-    quantum_system = SubSection(
+    model_system = SubSection(
         sub_section=QuantumSystem.m_def,
         repeats=False,
         description="""System definition for quantum simulations.

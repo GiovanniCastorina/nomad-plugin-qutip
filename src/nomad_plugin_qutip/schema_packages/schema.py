@@ -44,7 +44,7 @@ QuantumSimulation.m_def.m_annotations.setdefault(MAPPING_ANNOTATION_KEY, {}).upd
 )
 
 
-QuantumSimulation.quantum_system.m_annotations.setdefault(
+QuantumSimulation.model_system.m_annotations.setdefault(
     MAPPING_ANNOTATION_KEY, {}
 ).update(
     dict(info=Mapper(mapper=('get_system', ['.@']), sub_section=QuantumSystem.m_def))

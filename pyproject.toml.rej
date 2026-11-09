@@ -1,0 +1,11 @@
+diff a/pyproject.toml b/pyproject.toml	(rejected hunks)
+@@ -113,8 +132,8 @@ where = ["src"]
+ [project.entry-points.'nomad.plugin']
+ parser_entry_point = "nomad_plugin_qutip.parsers:parser_entry_point"
+ schema_package_entry_point = "nomad_plugin_qutip.schema_packages:schema_package_entry_point"
+-
+ app_entry_point = "nomad_plugin_qutip.apps:app_entry_point"
++action_entry_point = "nomad_plugin_qutip.actions:simple_action_entry_point"
+ 
+ [tool.cruft]
+ # Avoid updating workflow files, this leads to permissions issues
